@@ -1,0 +1,1032 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>River Crossing Puzzle</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        
+        body {
+            background: linear-gradient(to bottom, #1a2980, #26d0ce);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+            color: #fff;
+            overflow-x: hidden;
+        }
+        
+        .game-container {
+            width: 100%;
+            max-width: 1000px;
+            background: rgba(0, 30, 60, 0.85);
+            border-radius: 20px;
+            box-shadow: 0 15px 30px rgba(0, 0, 0, 0.4);
+            overflow: hidden;
+        }
+        
+        header {
+            background: rgba(0, 20, 40, 0.9);
+            padding: 20px;
+            text-align: center;
+            border-bottom: 3px solid #2ecc71;
+            position: relative;
+        }
+        
+        h1 {
+            font-size: 2.8rem;
+            margin-bottom: 10px;
+            color: #2ecc71;
+            text-shadow: 0 0 10px rgba(46, 204, 113, 0.7);
+            letter-spacing: 1px;
+        }
+        
+        .game-info {
+            display: flex;
+            justify-content: space-between;
+            padding: 15px 20px;
+            background: rgba(0, 25, 50, 0.8);
+        }
+        
+        .controls {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+        
+        button {
+            padding: 10px 18px;
+            border: none;
+            border-radius: 50px;
+            background: #3498db;
+            color: white;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        button:hover {
+            background: #2980b9;
+            transform: translateY(-2px);
+            box-shadow: 0 6px 8px rgba(0, 0, 0, 0.2);
+        }
+        
+        button:disabled {
+            background: #7f8c8d;
+            cursor: not-allowed;
+            transform: none;
+            box-shadow: none;
+            opacity: 0.7;
+        }
+        
+        .reset-btn {
+            background: #e74c3c;
+        }
+        
+        .reset-btn:hover:not(:disabled) {
+            background: #c0392b;
+        }
+        
+        .hint-btn {
+            background: #9b59b6;
+        }
+        
+        .hint-btn:hover:not(:disabled) {
+            background: #8e44ad;
+        }
+        
+        .load-btn {
+            background: #f39c12;
+        }
+        
+        .load-btn:hover:not(:disabled) {
+            background: #d35400;
+        }
+        
+        .unload-btn {
+            background: #27ae60;
+        }
+        
+        .unload-btn:hover:not(:disabled) {
+            background: #219653;
+        }
+        
+        .move-btn {
+            background: #2ecc71;
+            font-size: 1.1rem;
+            padding: 12px 25px;
+        }
+        
+        .move-btn:hover:not(:disabled) {
+            background: #27ae60;
+        }
+        
+        .game-area {
+            position: relative;
+            height: 480px;
+            padding: 20px 0;
+            display: flex;
+            flex-direction: row;
+        }
+        
+        .river-container {
+            position: relative;
+            width: 300px;
+            height: 100%;
+            flex-shrink: 0;
+        }
+        
+        .river {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(to bottom, #2980b9, #3498db, #2980b9);
+            z-index: 1;
+            box-shadow: 0 0 30px rgba(41, 128, 185, 0.7) inset;
+        }
+        
+        .river::after {
+            content: "";
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="40" height="100" viewBox="0 0 40 100"><path d="M20,0 Q30,20 20,40 T20,80 Q10,90 20,100" stroke="rgba(255,255,255,0.3)" fill="none" stroke-width="2"/></svg>');
+            animation: flow 15s linear infinite;
+            background-size: 40px 100px;
+        }
+        
+        @keyframes flow {
+            0% { background-position: 0 0; }
+            100% { background-position: 0 100%; }
+        }
+        
+        .bank {
+            flex: 1;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            z-index: 2;
+        }
+        
+        .left-bank {
+            background: linear-gradient(to right, rgba(139, 119, 101, 0.5), rgba(139, 119, 101, 0.3));
+            border-right: 5px dashed #8b7765;
+        }
+        
+        .right-bank {
+            background: linear-gradient(to left, rgba(101, 139, 119, 0.5), rgba(101, 139, 119, 0.3));
+            border-left: 5px dashed #658b77;
+        }
+        
+        .bank-title {
+            position: absolute;
+            top: 15px;
+            font-weight: bold;
+            font-size: 1.4rem;
+            color: #ecf0f1;
+            text-shadow: 0 2px 4px rgba(0, 0, 0, 0.7);
+            background: rgba(0, 0, 0, 0.3);
+            padding: 8px 20px;
+            border-radius: 30px;
+        }
+        
+        .items-container {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            gap: 20px;
+            margin-top: 40px;
+        }
+        
+        .item {
+            width: 90px;
+            height: 90px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            border-radius: 50%;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            position: relative;
+            background: rgba(255, 255, 255, 0.15);
+            box-shadow: 0 6px 15px rgba(0, 0, 0, 0.3);
+        }
+        
+        .item:hover {
+            transform: translateY(-8px);
+            box-shadow: 0 12px 20px rgba(0, 0, 0, 0.4);
+            background: rgba(255, 255, 255, 0.25);
+        }
+        
+        .item.selected {
+            transform: scale(1.15);
+            box-shadow: 0 0 20px #2ecc71;
+            background: rgba(46, 204, 113, 0.25);
+            z-index: 5;
+        }
+        
+        .item-icon {
+            font-size: 45px;
+            margin-bottom: 5px;
+            filter: drop-shadow(0 2px 4px rgba(0,0,0,0.3));
+        }
+        
+        .item-name {
+            font-size: 14px;
+            font-weight: bold;
+            text-align: center;
+            text-shadow: 0 1px 3px rgba(0,0,0,0.5);
+        }
+        
+        .boat {
+            position: absolute;
+            top: 50%;
+            left: 20px;
+            width: 120px;
+            height: 60px;
+            background: #8B4513;
+            border-radius: 50% 50% 0 0;
+            transform: translateY(-50%);
+            z-index: 3;
+            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.4);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            cursor: pointer;
+            transition: left 0.1s linear;
+        }
+        
+        .boat::before {
+            content: "";
+            position: absolute;
+            top: -20px;
+            width: 8px;
+            height: 40px;
+            background: #D2691E;
+            border-radius: 5px;
+            left: 50%;
+            transform: translateX(-50%);
+        }
+        
+        .boat::after {
+            content: "⛵";
+            position: absolute;
+            top: -40px;
+            font-size: 30px;
+            left: 50%;
+            transform: translateX(-50%);
+            text-shadow: 0 2px 4px rgba(0,0,0,0.5);
+        }
+        
+        .boat.moving {
+            animation: boat-bob 1.5s infinite ease-in-out;
+        }
+        
+        @keyframes boat-bob {
+            0%, 100% { transform: translateY(-55%); }
+            50% { transform: translateY(-45%); }
+        }
+        
+        .boat-content {
+            display: flex;
+            gap: 15px;
+            padding: 0 10px;
+        }
+        
+        .message {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: rgba(0, 0, 0, 0.85);
+            padding: 25px 50px;
+            border-radius: 15px;
+            text-align: center;
+            font-size: 1.8rem;
+            font-weight: bold;
+            z-index: 10;
+            display: none;
+            animation: pulse 2s infinite;
+            border: 3px solid #2ecc71;
+            max-width: 90%;
+            backdrop-filter: blur(5px);
+        }
+        
+        @keyframes pulse {
+            0% { box-shadow: 0 0 15px rgba(46, 204, 113, 0.7); }
+            50% { box-shadow: 0 0 40px rgba(46, 204, 113, 1); }
+            100% { box-shadow: 0 0 15px rgba(46, 204, 113, 0.7); }
+        }
+        
+        .instructions {
+            padding: 20px;
+            background: rgba(0, 20, 40, 0.8);
+            border-top: 2px solid #3498db;
+        }
+        
+        .instructions h3 {
+            margin-bottom: 15px;
+            color: #2ecc71;
+            font-size: 1.5rem;
+            text-align: center;
+        }
+        
+        .rules {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+            gap: 15px;
+        }
+        
+        .rule {
+            background: rgba(255, 255, 255, 0.12);
+            padding: 15px;
+            border-radius: 10px;
+            font-size: 1.05rem;
+            line-height: 1.5;
+        }
+        
+        .move-controls {
+            text-align: center;
+            padding: 15px;
+            background: rgba(0, 25, 50, 0.7);
+            border-top: 1px solid #3498db;
+        }
+        
+        .status {
+            display: flex;
+            justify-content: space-around;
+            padding: 15px;
+            background: rgba(0, 20, 40, 0.6);
+            font-weight: bold;
+            font-size: 1.1rem;
+        }
+        
+        .status-item {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            background: rgba(0, 0, 0, 0.3);
+            padding: 8px 15px;
+            border-radius: 30px;
+        }
+        
+        .ripple {
+            position: absolute;
+            border-radius: 50%;
+            background: rgba(255, 255, 255, 0.4);
+            transform: scale(0);
+            animation: ripple 1s linear;
+            pointer-events: none;
+        }
+        
+        @keyframes ripple {
+            to {
+                transform: scale(2);
+                opacity: 0;
+            }
+        }
+        
+        .sun {
+            position: absolute;
+            top: 20px;
+            right: 30px;
+            width: 60px;
+            height: 60px;
+            background: #ffdb58;
+            border-radius: 50%;
+            box-shadow: 0 0 40px #ffdb58, 0 0 80px #ffdb58;
+            z-index: 0;
+        }
+        
+        .bird {
+            position: absolute;
+            color: #fff;
+            font-size: 24px;
+            z-index: 2;
+            animation: fly 20s linear infinite;
+        }
+        
+        @keyframes fly {
+            0% { transform: translateX(-100px) translateY(var(--y)); }
+            100% { transform: translateX(calc(100vw + 100px)) translateY(var(--y)); }
+        }
+        
+        @media (max-width: 900px) {
+            .river-container {
+                width: 200px;
+            }
+            
+            .item {
+                width: 80px;
+                height: 80px;
+            }
+            
+            h1 {
+                font-size: 2.2rem;
+            }
+        }
+        
+        @media (max-width: 700px) {
+            .game-area {
+                flex-direction: column;
+                height: auto;
+            }
+            
+            .river-container {
+                width: 100%;
+                height: 150px;
+                order: 1;
+            }
+            
+            .left-bank, .right-bank {
+                min-height: 220px;
+            }
+            
+            .left-bank {
+                border-right: none;
+                border-bottom: 5px dashed #8b7765;
+            }
+            
+            .right-bank {
+                border-left: none;
+                border-top: 5px dashed #658b77;
+                order: 2;
+            }
+            
+            .boat {
+                top: 75px;
+                left: 50px;
+            }
+            
+            .status {
+                flex-direction: column;
+                gap: 10px;
+                align-items: center;
+            }
+            
+            .rules {
+                grid-template-columns: 1fr;
+            }
+        }
+        
+        @media (max-width: 480px) {
+            h1 {
+                font-size: 1.8rem;
+            }
+            
+            .controls {
+                justify-content: center;
+            }
+            
+            .item {
+                width: 70px;
+                height: 70px;
+            }
+            
+            .item-icon {
+                font-size: 35px;
+            }
+            
+            .boat {
+                width: 100px;
+                height: 50px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="game-container">
+        <header>
+            <h1><i class="fas fa-water"></i> River Crossing Puzzle</h1>
+            <p>Get the farmer, goat, cabbage, and wolf safely across the river</p>
+            <div class="sun"></div>
+        </header>
+        
+        <div class="status">
+            <div class="status-item">
+                <i class="fas fa-ship"></i>
+                <span>Boat Position: <span id="boat-position">Left</span></span>
+            </div>
+            <div class="status-item">
+                <i class="fas fa-user"></i>
+                <span>Farmer: <span id="farmer-location">Left Bank</span></span>
+            </div>
+            <div class="status-item">
+                <i class="fas fa-shoe-prints"></i>
+                <span>Steps: <span id="steps">0</span></span>
+            </div>
+        </div>
+        
+        <div class="game-info">
+            <div class="controls">
+                <button class="load-btn" id="load-btn">
+                    <i class="fas fa-arrow-circle-down"></i> Load to Boat
+                </button>
+                <button class="unload-btn" id="unload-btn">
+                    <i class="fas fa-arrow-circle-up"></i> Unload from Boat
+                </button>
+                <button class="hint-btn" id="hint-btn">
+                    <i class="fas fa-lightbulb"></i> Hint
+                </button>
+                <button class="reset-btn" id="reset-btn">
+                    <i class="fas fa-redo"></i> Reset Game
+                </button>
+            </div>
+        </div>
+        
+        <div class="game-area">
+            <div class="bank left-bank">
+                <div class="bank-title">Left Bank</div>
+                <div class="items-container" id="left-bank-items">
+                    <div class="item" data-item="farmer">
+                        <div class="item-icon">👨‍🌾</div>
+                        <div class="item-name">Farmer</div>
+                    </div>
+                    <div class="item" data-item="goat">
+                        <div class="item-icon">🐐</div>
+                        <div class="item-name">Goat</div>
+                    </div>
+                    <div class="item" data-item="cabbage">
+                        <div class="item-icon">🥬</div>
+                        <div class="item-name">Cabbage</div>
+                    </div>
+                    <div class="item" data-item="wolf">
+                        <div class="item-icon">🐺</div>
+                        <div class="item-name">Wolf</div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="river-container">
+                <div class="river"></div>
+                <div class="boat" id="boat">
+                    <div class="boat-content" id="boat-content"></div>
+                </div>
+                <!-- Birds flying over the river -->
+                <div class="bird" style="--y: 30px; top: 20px; animation-delay: 0s;">🐦</div>
+                <div class="bird" style="--y: 60px; top: 50px; animation-delay: 3s;">🕊️</div>
+                <div class="bird" style="--y: 90px; top: 80px; animation-delay: 6s;">🐦</div>
+            </div>
+            
+            <div class="bank right-bank">
+                <div class="bank-title">Right Bank</div>
+                <div class="items-container" id="right-bank-items"></div>
+            </div>
+            
+            <div class="message" id="message"></div>
+        </div>
+        
+        <div class="move-controls">
+            <button class="move-btn" id="move-boat-btn">
+                <i class="fas fa-ship"></i> Move Boat to Right Side
+            </button>
+        </div>
+        
+        <div class="instructions">
+            <h3><i class="fas fa-info-circle"></i> How to Play</h3>
+            <div class="rules">
+                <div class="rule"><i class="fas fa-mouse-pointer"></i> Click on an item to select it (highlighted in green)</div>
+                <div class="rule"><i class="fas fa-arrow-down"></i> Click "Load" to put selected item on the boat</div>
+                <div class="rule"><i class="fas fa-ship"></i> Click "Move Boat" to sail to the other side</div>
+                <div class="rule"><i class="fas fa-arrow-up"></i> Click "Unload" to remove items from the boat</div>
+                <div class="rule">🚤 The boat can only carry the farmer and one other item</div>
+                <div class="rule">🐐⚠️🥬 Never leave the goat alone with the cabbage</div>
+                <div class="rule">🐐⚠️🐺 Never leave the goat alone with the wolf</div>
+                <div class="rule">🎯 Get all items to the right bank to win!</div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            // Create ripple effect
+            function createRipple(e) {
+                const ripple = document.createElement('div');
+                ripple.classList.add('ripple');
+                ripple.style.left = e.clientX + 'px';
+                ripple.style.top = e.clientY + 'px';
+                document.body.appendChild(ripple);
+                
+                setTimeout(() => {
+                    ripple.remove();
+                }, 1000);
+            }
+            
+            // Add ripple effect to buttons
+            document.querySelectorAll('button').forEach(btn => {
+                btn.addEventListener('click', createRipple);
+            });
+            
+            // Game state
+            const gameState = {
+                farmer: 'left',
+                goat: 'left',
+                cabbage: 'left',
+                wolf: 'left',
+                boatPosition: 'left',
+                steps: 0,
+                gameOver: false,
+                selectedItem: null,
+                moving: false
+            };
+            
+            // DOM elements
+            const leftBankItems = document.getElementById('left-bank-items');
+            const rightBankItems = document.getElementById('right-bank-items');
+            const boat = document.getElementById('boat');
+            const boatContent = document.getElementById('boat-content');
+            const stepsDisplay = document.getElementById('steps');
+            const messageDisplay = document.getElementById('message');
+            const resetBtn = document.getElementById('reset-btn');
+            const hintBtn = document.getElementById('hint-btn');
+            const moveBoatBtn = document.getElementById('move-boat-btn');
+            const loadBtn = document.getElementById('load-btn');
+            const unloadBtn = document.getElementById('unload-btn');
+            const items = document.querySelectorAll('.item');
+            const boatPositionDisplay = document.getElementById('boat-position');
+            const farmerLocationDisplay = document.getElementById('farmer-location');
+            
+            // Initialize game
+            initGame();
+            
+            // Event listeners
+            resetBtn.addEventListener('click', initGame);
+            hintBtn.addEventListener('click', showHint);
+            moveBoatBtn.addEventListener('click', moveBoat);
+            loadBtn.addEventListener('click', loadToBoat);
+            unloadBtn.addEventListener('click', unloadFromBoat);
+            
+            // Add click functionality to items
+            items.forEach(item => {
+                item.addEventListener('click', () => {
+                    if (gameState.gameOver || gameState.moving) return;
+                    
+                    // Deselect all items
+                    document.querySelectorAll('.item.selected').forEach(el => {
+                        el.classList.remove('selected');
+                    });
+                    
+                    // Select clicked item
+                    item.classList.add('selected');
+                    gameState.selectedItem = item.dataset.item;
+                });
+            });
+            
+            // Initialize game state
+            function initGame() {
+                gameState.farmer = 'left';
+                gameState.goat = 'left';
+                gameState.cabbage = 'left';
+                gameState.wolf = 'left';
+                gameState.boatPosition = 'left';
+                gameState.steps = 0;
+                gameState.gameOver = false;
+                gameState.selectedItem = null;
+                gameState.moving = false;
+                
+                // Reset display
+                stepsDisplay.textContent = gameState.steps;
+                messageDisplay.style.display = 'none';
+                boatPositionDisplay.textContent = 'Left';
+                farmerLocationDisplay.textContent = 'Left Bank';
+                
+                // Move all items to left bank
+                const allItems = Array.from(document.querySelectorAll('.item'));
+                allItems.forEach(item => {
+                    leftBankItems.appendChild(item);
+                    item.classList.remove('selected');
+                });
+                
+                // Clear boat
+                boatContent.innerHTML = '';
+                
+                // Position boat
+                updateBoatPosition();
+                
+                // Update buttons
+                updateButtons();
+            }
+            
+            // Load selected item to boat
+            function loadToBoat() {
+                if (gameState.moving || gameState.gameOver) return;
+                if (!gameState.selectedItem) {
+                    showMessage("Please select an item first!");
+                    return;
+                }
+                
+                const itemType = gameState.selectedItem;
+                const currentLocation = gameState[itemType];
+                
+                // Only allow loading from the current bank where boat is
+                if (currentLocation !== gameState.boatPosition) {
+                    showMessage(`Item is not on the ${gameState.boatPosition} bank!`);
+                    return;
+                }
+                
+                // Farmer must be on the same bank to load items
+                if (gameState.farmer !== gameState.boatPosition && gameState.farmer !== 'boat') {
+                    showMessage("Farmer must be on the same bank to load items!");
+                    return;
+                }
+                
+                // Boat can only carry one item besides the farmer
+                if (itemType !== 'farmer' && boatContent.children.length >= 1) {
+                    showMessage("Boat can only carry one item besides the farmer!");
+                    return;
+                }
+                
+                // Move the item
+                const item = document.querySelector(`.item[data-item="${itemType}"]`);
+                boatContent.appendChild(item);
+                
+                // Update game state
+                gameState[itemType] = 'boat';
+                
+                // Update steps
+                gameState.steps++;
+                stepsDisplay.textContent = gameState.steps;
+                
+                // Update farmer location display
+                if (itemType === 'farmer') {
+                    farmerLocationDisplay.textContent = 'On Boat';
+                }
+                
+                // Deselect item
+                item.classList.remove('selected');
+                gameState.selectedItem = null;
+                
+                // Update buttons
+                updateButtons();
+            }
+            
+            // Unload item from boat
+            function unloadFromBoat() {
+                if (gameState.moving || gameState.gameOver) return;
+                if (boatContent.children.length === 0) {
+                    showMessage("Boat is empty!");
+                    return;
+                }
+                
+                // Farmer must be on the boat to unload
+                const farmerInBoat = Array.from(boatContent.children).some(
+                    item => item.dataset.item === 'farmer'
+                );
+                
+                if (!farmerInBoat) {
+                    showMessage("Farmer must be in the boat to unload items!");
+                    return;
+                }
+                
+                // Unload all items in boat to the current bank
+                const itemsInBoat = Array.from(boatContent.children);
+                itemsInBoat.forEach(item => {
+                    const itemType = item.dataset.item;
+                    
+                    // Update game state
+                    gameState[itemType] = gameState.boatPosition;
+                    
+                    // Move to the correct bank container
+                    if (gameState.boatPosition === 'left') {
+                        leftBankItems.appendChild(item);
+                    } else {
+                        rightBankItems.appendChild(item);
+                    }
+                    
+                    // Update farmer location display
+                    if (itemType === 'farmer') {
+                        farmerLocationDisplay.textContent = gameState.boatPosition + ' Bank';
+                    }
+                });
+                
+                // Update steps
+                gameState.steps++;
+                stepsDisplay.textContent = gameState.steps;
+                
+                // Update buttons
+                updateButtons();
+                
+                // Check game state
+                setTimeout(checkGameState, 300);
+            }
+            
+            // Move boat to other side
+            function moveBoat() {
+                if (gameState.moving || gameState.gameOver) return;
+                
+                // Boat must have the farmer to move
+                const farmerInBoat = Array.from(boatContent.children).some(
+                    item => item.dataset.item === 'farmer'
+                );
+                
+                if (!farmerInBoat) {
+                    showMessage("Farmer must be in the boat to move it!");
+                    return;
+                }
+                
+                // Boat must have at least the farmer
+                if (boatContent.children.length === 0) {
+                    showMessage("Boat is empty!");
+                    return;
+                }
+                
+                // Prevent interactions during movement
+                gameState.moving = true;
+                updateButtons();
+                
+                // Get river width for animation
+                const riverWidth = document.querySelector('.river-container').offsetWidth - 140;
+                const targetPosition = gameState.boatPosition === 'left' ? riverWidth : 20;
+                
+                // Animate boat movement
+                let currentPosition = gameState.boatPosition === 'left' ? 20 : riverWidth;
+                const animationSpeed = 2; // pixels per frame
+                
+                function animateBoat() {
+                    if ((gameState.boatPosition === 'left' && currentPosition < targetPosition) || 
+                        (gameState.boatPosition === 'right' && currentPosition > targetPosition)) {
+                        
+                        if (gameState.boatPosition === 'left') {
+                            currentPosition += animationSpeed;
+                        } else {
+                            currentPosition -= animationSpeed;
+                        }
+                        
+                        boat.style.left = currentPosition + 'px';
+                        requestAnimationFrame(animateBoat);
+                    } else {
+                        // Animation complete
+                        boat.classList.remove('moving');
+                        
+                        // Update boat position
+                        gameState.boatPosition = gameState.boatPosition === 'left' ? 'right' : 'left';
+                        updateBoatPosition();
+                        
+                        // Update steps
+                        gameState.steps++;
+                        stepsDisplay.textContent = gameState.steps;
+                        
+                        // Update boat position display
+                        boatPositionDisplay.textContent = gameState.boatPosition.charAt(0).toUpperCase() + gameState.boatPosition.slice(1);
+                        
+                        // Allow interactions again
+                        gameState.moving = false;
+                        updateButtons();
+                        
+                        // Check game state
+                        setTimeout(checkGameState, 300);
+                    }
+                }
+                
+                // Start animation
+                boat.classList.add('moving');
+                animateBoat();
+            }
+            
+            // Update boat position visually
+            function updateBoatPosition() {
+                const riverWidth = document.querySelector('.river-container').offsetWidth - 140;
+                if (gameState.boatPosition === 'left') {
+                    boat.style.left = '20px';
+                    moveBoatBtn.innerHTML = '<i class="fas fa-ship"></i> Move Boat to Right Side';
+                } else {
+                    boat.style.left = riverWidth + 'px';
+                    moveBoatBtn.innerHTML = '<i class="fas fa-ship"></i> Move Boat to Left Side';
+                }
+            }
+            
+            // Update button states
+            function updateButtons() {
+                const farmerInBoat = Array.from(boatContent.children).some(
+                    item => item.dataset.item === 'farmer'
+                );
+                
+                // Disable buttons during movement
+                if (gameState.moving) {
+                    loadBtn.disabled = true;
+                    unloadBtn.disabled = true;
+                    moveBoatBtn.disabled = true;
+                    hintBtn.disabled = true;
+                    return;
+                }
+                
+                // Enable buttons otherwise
+                loadBtn.disabled = false;
+                unloadBtn.disabled = false;
+                moveBoatBtn.disabled = false;
+                hintBtn.disabled = false;
+                resetBtn.disabled = false;
+                
+                // Disable unload if boat is empty
+                unloadBtn.disabled = boatContent.children.length === 0;
+                
+                // Disable move if farmer is not in boat
+                moveBoatBtn.disabled = !farmerInBoat;
+            }
+            
+            // Check game rules and state
+            function checkGameState() {
+                if (gameState.gameOver) return;
+                
+                // Helper to check if farmer is at a bank
+                function isFarmerAtBank(bank) {
+                    return gameState.farmer === bank || 
+                          (gameState.farmer === 'boat' && gameState.boatPosition === bank);
+                }
+                
+                // Check left bank when farmer is not there
+                if (!isFarmerAtBank('left')) {
+                    const leftItems = [];
+                    if (gameState.goat === 'left') leftItems.push('goat');
+                    if (gameState.cabbage === 'left') leftItems.push('cabbage');
+                    if (gameState.wolf === 'left') leftItems.push('wolf');
+                    
+                    if (leftItems.includes('goat') && leftItems.includes('cabbage')) {
+                        gameOver("Oh no! The goat ate the cabbage! Game over.");
+                        return;
+                    }
+                    if (leftItems.includes('goat') && leftItems.includes('wolf')) {
+                        gameOver("Oh no! The wolf ate the goat! Game over.");
+                        return;
+                    }
+                }
+                
+                // Check right bank when farmer is not there
+                if (!isFarmerAtBank('right')) {
+                    const rightItems = [];
+                    if (gameState.goat === 'right') rightItems.push('goat');
+                    if (gameState.cabbage === 'right') rightItems.push('cabbage');
+                    if (gameState.wolf === 'right') rightItems.push('wolf');
+                    
+                    if (rightItems.includes('goat') && rightItems.includes('cabbage')) {
+                        gameOver("Oh no! The goat ate the cabbage! Game over.");
+                        return;
+                    }
+                    if (rightItems.includes('goat') && rightItems.includes('wolf')) {
+                        gameOver("Oh no! The wolf ate the goat! Game over.");
+                        return;
+                    }
+                }
+                
+                // Check win condition
+                if (gameState.farmer === 'right' && 
+                    gameState.goat === 'right' && 
+                    gameState.cabbage === 'right' && 
+                    gameState.wolf === 'right') {
+                    gameOver(`🎉 Congratulations! You solved the puzzle in ${gameState.steps} steps!`);
+                }
+            }
+            
+            // Show message
+            function showMessage(text) {
+                messageDisplay.textContent = text;
+                messageDisplay.style.display = 'block';
+                setTimeout(() => {
+                    messageDisplay.style.display = 'none';
+                }, 2500);
+            }
+            
+            // Game over
+            function gameOver(message) {
+                gameState.gameOver = true;
+                messageDisplay.textContent = message;
+                messageDisplay.style.display = 'block';
+                updateButtons();
+            }
+            
+            // Show hint
+            function showHint() {
+                const hints = [
+                    "First, take the goat across to the right bank.",
+                    "Then, come back alone and take the wolf (or cabbage) across.",
+                    "Bring the goat back with you to the left bank.",
+                    "Take the cabbage (or wolf) across to the right bank.",
+                    "Finally, go back alone and get the goat again."
+                ];
+                
+                const hint = hints[Math.floor(Math.random() * hints.length)];
+                showMessage(`💡 Hint: ${hint}`);
+            }
+        });
+    </script>
+</body>
+</html>
